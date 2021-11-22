@@ -28,6 +28,82 @@ def read_fasta_file(filename):
     return sequences
 #%%
 '''
+Functions and probabilities from assignment:
+'''
+import numpy as np
+def translate_observations_to_indices(obs):
+    mapping = {'a': 0, 'c': 1, 'g': 2, 't': 3}
+    return [mapping[symbol.lower()] for symbol in obs]
+
+def translate_indices_to_observations(indices):
+    mapping = ['a', 'c', 'g', 't']
+    return ''.join(mapping[idx] for idx in indices)
+
+class hmm:
+    def __init__(self, init_probs, trans_probs, emission_probs):
+        self.init_probs = init_probs
+        self.trans_probs = trans_probs
+        self.emission_probs = emission_probs
+
+init_probs_3_state = np.array(
+    [0.00, 0.10, 0.00]
+)
+
+trans_probs_3_state = np.array([
+    [0.90, 0.10, 0.00],
+    [0.05, 0.90, 0.05],
+    [0.00, 0.10, 0.90],
+])
+
+emission_probs_3_state = np.array([
+    #   A     C     G     T
+    [0.40, 0.15, 0.20, 0.25],
+    [0.25, 0.25, 0.25, 0.25],
+    [0.20, 0.40, 0.30, 0.10],
+])
+
+hmm_3_state = hmm(init_probs_3_state,
+                  trans_probs_3_state,
+                  emission_probs_3_state)
+
+
+init_probs_7_state = np.array(
+    [0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00]
+)
+
+trans_probs_7_state = np.array([
+    [1.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
+    [0.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00],
+    [0.90, 0.00, 0.00, 0.10, 0.00, 0.00, 0.00],
+    [0.00, 0.00, 0.05, 0.90, 0.05, 0.00, 0.00],
+    [0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00],
+    [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00],
+    [0.00, 0.00, 0.00, 0.10, 0.90, 0.00, 0.00],
+])
+
+emission_probs_7_state = np.array([
+    #   A     C     G     T
+    [0.30, 0.25, 0.25, 0.20],
+    [0.20, 0.35, 0.15, 0.30],
+    [0.40, 0.15, 0.20, 0.25],
+    [0.25, 0.25, 0.25, 0.25],
+    [0.20, 0.40, 0.30, 0.10],
+    [0.30, 0.20, 0.30, 0.20],
+    [0.15, 0.30, 0.20, 0.35],
+])
+
+hmm_7_state = hmm(init_probs_7_state,
+                  trans_probs_7_state,
+                  emission_probs_7_state)
+
+import math
+def log(x):
+    if x == 0:
+        return float("-inf")
+    else:
+        return math.log(x)
+#%%
+'''
 Translation of 3 state model:
 '''
 
@@ -68,6 +144,30 @@ def HMM_7_State(sequence:str)->str:
     return "".join(o)
 
 
+#%%
+
+'''
+Viterbi Implementation:
+'''
+def viterbi(obs, hmm):
+    X = translate_observations_to_indices(obs)
+    N = len(X)
+    K = len(hmm.init_probs)
+    V = np.zeros((K,N))
+
+	# Initialise the first column of V
+    for i in range(0, K):
+        V[i][0] = log(hmm.init_probs[i]) + log(hmm.emission_probs[i][X[0]])
+
+    #for i in range(0, K):
+    #    for j in range(1, N):
+    #        # Implement the Viterbi algorithm
+    #        V[i][j] = V[i][j-1] + log(hmm.emission_probs[i][X[j]])
+
+
+    return V
+
+
 '''
 Code testing area below:
 '''
@@ -77,4 +177,8 @@ dat = read_fasta_file("true-ann1.fa")
 print(HMM_translate(dat["true-ann1"][200:400]))
 # %%
 print(HMM_7_State(dat["true-ann1"][200:400]))
+# %%
+dat = read_fasta_file("genome1.fa")
+
+print(viterbi(dat["genome1"][0:10],hmm_3_state))
 # %%
