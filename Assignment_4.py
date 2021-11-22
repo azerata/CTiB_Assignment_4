@@ -1,4 +1,7 @@
 #%%
+'''
+Thanks for the fasta parser:
+'''
 def read_fasta_file(filename):
     """
     Reads the given FASTA file f and returns a dictionary of sequences.
@@ -24,6 +27,9 @@ def read_fasta_file(filename):
         sequences[name] = ''.join(lines)
     return sequences
 #%%
+'''
+Translation of 3 state model:
+'''
 
 def HMM_translate(sequence:str)->str:
     o = []
@@ -38,11 +44,37 @@ def HMM_translate(sequence:str)->str:
     return "".join(o)
 
 #%%
-sæk = "NNNNNNNNNNNNNCCCCRNNNNNNRRRRRRRRCCCCCCCNNNNNNNNN"
+'''
+Translation of 7 state model:
+'''
+def HMM_7_State(sequence:str)->str:
+    o = []
+    c_streak = 0
+    r_streak = 0
+    for chr in sequence:
+        match chr:
+            case "N":
+                o.append("3")
+                c_streak = 0
+                r_streak = 0
+            case "C":
+                o.append(str(c_streak % 3))
+                c_streak +=1
+                r_streak = 0
+            case "R":
+                o.append(str( (r_streak % 3) + 4 ))
+                r_streak += 1
+                c_streak = 0
+    return "".join(o)
 
-print(HMM_translate(sæk))
-# %%
+
+'''
+Code testing area below:
+'''
+#%%
 dat = read_fasta_file("true-ann1.fa")
 #%%
-print(HMM_translate(dat["true-ann1"][500:550]))
+print(HMM_translate(dat["true-ann1"][200:400]))
+# %%
+print(HMM_7_State(dat["true-ann1"][200:400]))
 # %%
