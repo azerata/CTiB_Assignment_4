@@ -154,15 +154,24 @@ def viterbi(obs, hmm):
     N = len(X)
     K = len(hmm.init_probs)
     V = np.zeros((K,N))
+    hmm.init_probs = log(hmm.init_probs)
+    hmm.trans_probs = log(hmm.trans_probs)
+    hmm.emission_probs = log(hmm.emission_probs)
 
 	# Initialise the first column of V
     for i in range(0, K):
-        V[i][0] = log(hmm.init_probs[i]) + log(hmm.emission_probs[i][X[0]])
+        V[i][0] = hmm.init_probs[i] + hmm.emission_probs[i][X[0]]
+    init_prop = max(V[:,[0]])
+    print(init_prop)
 
-    #for i in range(0, K):
-    #    for j in range(1, N):
-    #        # Implement the Viterbi algorithm
-    #        V[i][j] = V[i][j-1] + log(hmm.emission_probs[i][X[j]])
+    assert V[:,0] == hmm.init_probs + hmm.emission_probs[:,[X[0]]]
+     # Implement the Viterbi algorithm
+    #for i in range(1, N):
+    #    for j in range(0, K):
+    #        t_probs =   V[:,[i-1]] + log(hmm.trans_probs[:,[j]])
+    #        print(t_probs)
+            #V[j][i] = max(V[:,[i-1]]
+
 
 
     return V
@@ -179,6 +188,8 @@ print(HMM_translate(dat["true-ann1"][200:400]))
 print(HMM_7_State(dat["true-ann1"][200:400]))
 # %%
 dat = read_fasta_file("genome1.fa")
+#%%
+
 
 print(viterbi(dat["genome1"][0:10],hmm_3_state))
 # %%
