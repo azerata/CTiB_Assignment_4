@@ -31,6 +31,7 @@ def read_fasta_file(filename):
 Functions and probabilities from assignment:
 '''
 import numpy as np
+from numpy.core.fromnumeric import argmax
 def translate_observations_to_indices(obs):
     mapping = {'a': 0, 'c': 1, 'g': 2, 't': 3}
     return [mapping[symbol.lower()] for symbol in obs]
@@ -72,10 +73,10 @@ init_probs_7_state = np.array(
 )
 
 trans_probs_7_state = np.array([
-    [1.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
     [0.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00],
+    [0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00],
     [0.90, 0.00, 0.00, 0.10, 0.00, 0.00, 0.00],
-    [0.00, 0.00, 0.05, 0.90, 0.05, 0.00, 0.00],
+    [0.05, 0.00, 0.00, 0.90, 0.05, 0.00, 0.00],
     [0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00],
     [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00],
     [0.00, 0.00, 0.00, 0.10, 0.90, 0.00, 0.00],
@@ -154,28 +155,52 @@ def viterbi(obs, hmm):
     N = len(X)
     K = len(hmm.init_probs)
     V = np.zeros((K,N))
-    hmm.init_probs = log(hmm.init_probs)
-    hmm.trans_probs = log(hmm.trans_probs)
-    hmm.emission_probs = log(hmm.emission_probs)
-
+    init_probs = np.log(hmm.init_probs)
+    trans_probs = np.log(hmm.trans_probs)
+    emission_probs = np.log(hmm.emission_probs)
+    
 	# Initialise the first column of V
     for i in range(0, K):
-        V[i][0] = hmm.init_probs[i] + hmm.emission_probs[i][X[0]]
-    init_prop = max(V[:,[0]])
-    print(init_prop)
+        V[i][0] = init_probs[i] + emission_probs[i][X[0]]
 
-    assert V[:,0] == hmm.init_probs + hmm.emission_probs[:,[X[0]]]
      # Implement the Viterbi algorithm
-    #for i in range(1, N):
-    #    for j in range(0, K):
-    #        t_probs =   V[:,[i-1]] + log(hmm.trans_probs[:,[j]])
-    #        print(t_probs)
-            #V[j][i] = max(V[:,[i-1]]
-
-
-
+    for i in range(1, N):
+        if i % 100000 == 0:
+            print(i)
+        for j in range(0, K):
+           t_probs =   V[:,i-1] + trans_probs[:,j]
+           V[j][i] = max(t_probs) + emission_probs[j][X[i]] 
+    print(V[:,0] == init_probs + emission_probs[:,X[0]])
     return V
 
+#%% Backwards Alg:
+
+def backwards(V, hmm):
+    assert len(V) == len(hmm.init_probs)
+    
+    init_probs = np.log(hmm.init_probs)
+    trans_probs = np.log(hmm.trans_probs)
+    emission_probs = np.log(hmm.emission_probs)
+    
+    N = len(V[0])
+    i = N - 1
+    k = argmax(V[:,N-1])
+    o = []
+    
+    while i >= 0:
+        o.append(str(k))
+        k = argmax(V[:,i-1] + trans_probs[:,k] )
+        i-=1
+        if i % 100000 == 0: print(i)
+    return ''.join(o[::-1])
+    
+#%%
+
+def compute_accuracy(true_ann, pred_ann):
+    if len(true_ann) != len(pred_ann):
+        return 0.0
+    return sum(1 if true_ann[i] == pred_ann[i] else 0 
+               for i in range(len(true_ann))) / len(true_ann)
 
 '''
 Code testing area below:
@@ -192,4 +217,16 @@ dat = read_fasta_file("genome1.fa")
 
 
 print(viterbi(dat["genome1"][0:10],hmm_3_state))
+# %%
+derp = viterbi(dat["genome1"][:],hmm_7_state)
+
+# %%
+pred = backwards(derp, hmm_7_state)
+#%%
+reeeee = read_fasta_file("true-ann1.fa")
+actual = HMM_translate(reeeee["true-ann1"][:])
+
+#%%
+print(len(actual), len(pred))
+compute_accuracy(actual, pred)
 # %%
