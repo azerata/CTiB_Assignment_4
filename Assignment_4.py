@@ -108,7 +108,7 @@ def log(x):
 Translation of 3 state model:
 '''
 
-def HMM_translate(sequence:str)->str:
+def HMM_3_translate(sequence:str)->str:
     o = []
     for chr in sequence:
         match chr:
@@ -124,7 +124,7 @@ def HMM_translate(sequence:str)->str:
 '''
 Translation of 7 state model:
 '''
-def HMM_7_State(sequence:str)->str:
+def HMM_7_translate(sequence:str)->str:
     o = []
     c_streak = 0
     r_streak = 0
@@ -202,15 +202,150 @@ def compute_accuracy(true_ann, pred_ann):
     return sum(1 if true_ann[i] == pred_ann[i] else 0 
                for i in range(len(true_ann))) / len(true_ann)
 
+#%%
+'''
+Finding Genes: 
+'''
+#%% Q1, genome 1, 7 state model.
+dat = read_fasta_file("true-ann1.fa")
+true = HMM_7_translate(dat["true-ann1"])
+
+obs = read_fasta_file("genome1.fa")
+tmp = viterbi(obs["genome1"], hmm_7_state)
+pred = backwards(tmp, hmm_7_state)
+
+
+compute_accuracy(true, pred)
+#Resulted in 26.5% accuracy
+
+#%% Q2, genome 2, 7 state model
+dat = read_fasta_file("true-ann2.fa")
+true = HMM_7_translate(dat["true-ann2"])
+
+obs = read_fasta_file("genome2.fa")
+tmp = viterbi(obs["genome2"], hmm_7_state)
+pred = backwards(tmp, hmm_7_state)
+
+compute_accuracy(true, pred)
+#resulted in 30.3% accuracy
+
+#%% Q3, genome 1, 3 state model
+dat = read_fasta_file("true-ann1.fa")
+true = HMM_3_translate(dat["true-ann1"])
+
+obs = read_fasta_file("genome1.fa")
+tmp = viterbi(obs["genome1"], hmm_3_state)
+pred = backwards(tmp, hmm_3_state)
+
+compute_accuracy(true, pred)
+#resulted in 31.9% accuracy
+
+#%% Q4, genome 2, 3 state model
+dat = read_fasta_file("true-ann2.fa")
+true = HMM_3_translate(dat["true-ann2"])
+
+obs = read_fasta_file("genome2.fa")
+tmp = viterbi(obs["genome2"], hmm_3_state)
+pred = backwards(tmp, hmm_3_state)
+
+compute_accuracy(true, pred)
+#resUlted in 35.1% accuracy
+
+
+#%%
+
+def training_model(data, true_ann, hm)->hmm:
+    obs = translate_observations_to_indices(data)
+    N = len(obs)
+    r = len(hm.init_probs)
+    c = 4
+    '''
+    We calculate the emission probs by zipping the sequense and the true-ann 
+    and count the nr of nucleotides occuring in each state. 
+    Each count is then divded by row sum.
+    '''
+
+    emission = np.zeros((r,c))
+    for state, nuc in zip(true_ann, obs):
+        emission[int(state)][int(nuc)] +=1
+    
+    for i in range(0, r):
+        div = sum(emission[i,:])
+        for j in range(0, c):
+            emission[i][j] /= div
+    
+    '''
+    We calculate transitions by counting each instance of a transition in the true-ann
+    and divide count by the sum of that row
+    '''
+
+    transition = np.zeros((r, r))
+    cunt = 0
+    nxt = cunt+1
+    while cunt < N-2:
+        transition[int(true_ann[cunt])][int(true_ann[nxt])] +=1
+        cunt +=1
+        nxt +=1
+    
+    for i in range(0, r):
+        div = sum(transition[i,:])
+        for j in range(0, r):
+            transition[i][j] /= div
+    
+    '''
+    We use the known initial state from true ann, 
+    to set the initial prob, since there is one known possible start state
+    we set that prob to 1
+    '''
+    initial = np.zeros((r))
+    initial[int(true_ann[0])] = 1
+
+    model = hmm(initial, transition, emission)
+    return model
+
+#%%
+
+'''
+Testing out the training model:
+'''
+dat = read_fasta_file("true-ann1.fa")
+true = HMM_3_translate(dat["true-ann1"])
+obs = read_fasta_file("genome1.fa")
+
+hmm_3_trained = training_model(obs["genome1"], true, hmm_3_state)
+print(hmm_3_trained.init_probs, hmm_3_trained.trans_probs , hmm_3_trained.emission_probs)
+
+obs2 = read_fasta_file("genome2.fa")
+
+tmp = viterbi(obs2["genome2"], hmm_3_trained)
+pred = backwards(tmp, hmm_3_trained)
+
+dat = read_fasta_file("true-ann2.fa")
+true = HMM_3_translate(dat["true-ann2"])
+
+
+
+print(compute_accuracy(true, pred))
+
+
+
+#%%
+
 '''
 Code testing area below:
 '''
 #%%
+
+
+
+
+
+#%%
 dat = read_fasta_file("true-ann1.fa")
 #%%
-print(HMM_translate(dat["true-ann1"][200:400]))
+print(HMM_3_translate(dat["true-ann1"][200:400]))
 # %%
-print(HMM_7_State(dat["true-ann1"][200:400]))
+print(HMM_7_translate(dat["true-ann1"][200:400]))
 # %%
 dat = read_fasta_file("genome1.fa")
 #%%
@@ -224,7 +359,7 @@ derp = viterbi(dat["genome1"][:],hmm_7_state)
 pred = backwards(derp, hmm_7_state)
 #%%
 reeeee = read_fasta_file("true-ann1.fa")
-actual = HMM_translate(reeeee["true-ann1"][:])
+actual = HMM_7_translate(reeeee["true-ann1"][:])
 
 #%%
 print(len(actual), len(pred))
