@@ -253,6 +253,10 @@ compute_accuracy(true, pred)
 
 
 #%%
+'''
+We make a function to train new models, so we can do it easily for each of the next tasks
+We take no responsibility for any strokes induced by looking at the following code.
+'''
 
 def training_model(data, true_ann, hm)->hmm:
     obs = translate_observations_to_indices(data)
@@ -302,19 +306,46 @@ def training_model(data, true_ann, hm)->hmm:
 
     model = hmm(initial, transition, emission)
     return model
+#%%
+
+'''
+Testing out the training model Q5: 
+Using genome 1 to train, and analyzing genome 2. With 7 state model
+'''
+dat = read_fasta_file("true-ann1.fa")
+true = HMM_7_translate(dat["true-ann1"])
+obs = read_fasta_file("genome1.fa")
+
+#Make trained model
+hmm_7_trained = training_model(obs["genome1"], true, hmm_7_state)
+
+#Load genome 2 and true-ann 2
+obs2 = read_fasta_file("genome2.fa")
+
+tmp = viterbi(obs2["genome2"], hmm_7_trained)
+pred = backwards(tmp, hmm_7_trained)
+
+dat = read_fasta_file("true-ann2.fa")
+true = HMM_7_translate(dat["true-ann2"])
+
+#compute accuracy
+print(compute_accuracy(true, pred))
+#resulted in 78% accuracy
 
 #%%
 
 '''
-Testing out the training model:
+Testing out the training model Q6:
+Using genome 1 to train, and analyzing genome 2. With 3 state model
 '''
 dat = read_fasta_file("true-ann1.fa")
 true = HMM_3_translate(dat["true-ann1"])
 obs = read_fasta_file("genome1.fa")
 
+#Make trained model
 hmm_3_trained = training_model(obs["genome1"], true, hmm_3_state)
-print(hmm_3_trained.init_probs, hmm_3_trained.trans_probs , hmm_3_trained.emission_probs)
 
+#Load genome 2 and true-ann 2
 obs2 = read_fasta_file("genome2.fa")
 
 tmp = viterbi(obs2["genome2"], hmm_3_trained)
@@ -323,9 +354,62 @@ pred = backwards(tmp, hmm_3_trained)
 dat = read_fasta_file("true-ann2.fa")
 true = HMM_3_translate(dat["true-ann2"])
 
-
-
+#Compute accuracy
 print(compute_accuracy(true, pred))
+#resulted in 57.4% accuracy
+
+
+#%%
+
+'''
+Testing out the training model Q7: 
+Using genome 2 to train, and analyzing genome 1. With 7 state model
+'''
+dat = read_fasta_file("true-ann2.fa")
+true = HMM_7_translate(dat["true-ann2"])
+obs = read_fasta_file("genome2.fa")
+
+#Make trained model
+hmm_7_trained = training_model(obs["genome2"], true, hmm_7_state)
+
+#Load genome 1 and true-ann 1
+obs2 = read_fasta_file("genome1.fa")
+
+tmp = viterbi(obs2["genome1"], hmm_7_trained)
+pred = backwards(tmp, hmm_7_trained)
+
+dat = read_fasta_file("true-ann1.fa")
+true = HMM_7_translate(dat["true-ann1"])
+
+#compute accuracy
+print(compute_accuracy(true, pred))
+#resulted in 76% accuracy
+
+#%%
+
+'''
+Testing out the training model Q8:
+Using genome 2 to train, and analyzing genome 1. With 3 state model
+'''
+dat = read_fasta_file("true-ann2.fa")
+true = HMM_3_translate(dat["true-ann2"])
+obs = read_fasta_file("genome2.fa")
+
+#Make trained model
+hmm_3_trained = training_model(obs["genome2"], true, hmm_3_state)
+
+#Load genome 1 and true-ann 1
+obs2 = read_fasta_file("genome1.fa")
+
+tmp = viterbi(obs2["genome1"], hmm_3_trained)
+pred = backwards(tmp, hmm_3_trained)
+
+dat = read_fasta_file("true-ann1.fa")
+true = HMM_3_translate(dat["true-ann1"])
+
+#Compute accuracy
+print(compute_accuracy(true, pred))
+#resulted in 59.1% accuracy
 
 
 
